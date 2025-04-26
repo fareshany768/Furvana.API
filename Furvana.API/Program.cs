@@ -1,6 +1,7 @@
 using Furvana.API.Data;
 using Furvana.API.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 
 namespace Furvana.API
 {
@@ -8,11 +9,11 @@ namespace Furvana.API
     {
         public static void Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
+            var builder = WebApplication.CreateBuilder(args);   
 
             // 1. Add DbContext (SQL Server)
             builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));                 
 
             // 2. Add CORS policy
             builder.Services.AddCors(options =>
@@ -41,14 +42,25 @@ namespace Furvana.API
 
             app.UseCors("AllowAll");
 
+
             app.UseAuthorization();
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(
+                Path.Combine(Directory.GetCurrentDirectory(), "images")),
+                RequestPath = "/images"
+            });
+
             app.MapControllers();
+            
 
             // 5. Seed database with pets if empty
             using (var scope = app.Services.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
+                context.Database.EnsureDeleted();
+                context.Database.EnsureCreated();
                 if (!context.Pets.Any())
                 {
                     var pets = new List<Pet>
