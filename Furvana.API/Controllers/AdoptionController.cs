@@ -2,33 +2,39 @@
 using Furvana.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Furvana.API.Controllers
 {
-        [ApiController]
-        [Route("api/[controller]")]
-        public class AdoptionController : ControllerBase
+    [ApiController]
+    [Route("api/[controller]")]
+    public class AdoptionController : ControllerBase
+    {
+        private readonly AppDbContext _context;
+
+        public AdoptionController(AppDbContext context)
         {
-            private readonly AppDbContext _context;
+            _context = context;
+        }
 
-            public AdoptionController(AppDbContext context)
-            {
-                _context = context;
-            }
+        // POST: api/adoption
+        [HttpPost]
+        public async Task<ActionResult<AdoptionRequest>> SubmitRequest([FromBody] AdoptionRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            [HttpPost]
-            public async Task<ActionResult<AdoptionRequest>> SubmitRequest(AdoptionRequest request)
-            {
-                _context.AdoptionRequests.Add(request);
-                await _context.SaveChangesAsync();
-                return Ok(request);
-            }
+            _context.AdoptionRequests.Add(request);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Application submitted successfully!" });
+        }
 
-            [HttpGet]
-            public async Task<ActionResult<IEnumerable<AdoptionRequest>>> GetAll()
-            {
-                return await _context.AdoptionRequests.ToListAsync();
-            }
+        // GET: api/adoption
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<AdoptionRequest>>> GetAll()
+        {
+            return await _context.AdoptionRequests.ToListAsync();
         }
     }
-
+}
